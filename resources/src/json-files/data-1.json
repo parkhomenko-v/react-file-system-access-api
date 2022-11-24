@@ -1,0 +1,14 @@
+{
+  "name": "John",
+  "age": 30,
+  "categories": [
+    {
+      "name": "phones",
+      "count": 10
+    },
+    {
+      "name": "tablets",
+      "count": 20
+    }
+  ]
+}
