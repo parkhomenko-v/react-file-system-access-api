@@ -304,7 +304,7 @@ function Title() {
     <div>
       <h1>File System Access API</h1>
       <p>
-        Sometimes we need to work with local files, for example with JSON files
+        Sometimes we need to work with local files, for example with JSON or JS files
       </p>
       <p>
         This code snipped is allow user to select files from file system in browser and do something with it
@@ -314,6 +314,9 @@ function Title() {
 }
 
 function ReadFiles() {
+  // Force update
+  const [, set] = React.useState(0);
+
   // Usage with react state
   // const [state, setState] = React.useState({ [TYPE_JS]: {}, [TYPE_JSON]: {} });
   // const handleClick = async () => {
@@ -324,19 +327,55 @@ function ReadFiles() {
 
   // Usage with react context
   const records = useRecords();
-  const handleClick = async () => {
+
+  React.useEffect(() => records.subscribe(() => set((n) => n + 1)), []);
+
+  const timeout = React.useRef(null);
+  const change = async () => {
     const res = await read();
 
-    records.change(res);
+    if (read.isModified()) {
+      await records.change(res);
+    }
+  };
+  const detach = () => {
+    clearTimeout(timeout.current);
+    timeout.current = null;
+  };
+  const attach = () => {
+    timeout.current = setTimeout(async () => {
+      await detach();
+      await change();
+      await attach();
+    }, 2000)
+  };
+  const handleClick = async () => {
+    await detach();
+    await change();
+    await attach();
   };
 
   return (
     <div>
-      <h2>Press "Click" on button to open files</h2>
-      <p>Select <mark>local-path-to-repository/react-file-system-access-api/resources</mark> and it will open content from <mark>src</mark> folder</p>
+      <p>- click on "Click to open folder" to open folder with files</p>
+      <p>- select <mark>local-path-to-repository/react-file-system-access-api/resources</mark> and it will open content from <mark>src</mark> folder</p>
+      <p>- if you see "Folder is listening now" got to <mark>local-path-to-repository/react-file-system-access-api/resources/src</mark> and change content of files</p>
+      <p>- in code we are running the timeout, and after you have changed the files you may see that content in browser was changed</p>
       <p><b>Note 1: </b><mark>resources</mark> and <mark>src</mark> is not required names, you can use names which is needed for solving your issues, just rewrite code according to your needs</p>
       <p><b>Note 2: </b>after reloading page in browser you need to open folder again to have access to resources</p>
-      <button type="button" onClick={handleClick}>Click</button>
+      <button
+        type="button"
+        onClick={read.isActive() ? undefined : handleClick}
+        style={{
+          border: `1px solid ${read.isActive() ? "green" : "red"}`,
+          borderRadius: 4,
+          padding: "5px 10px",
+          color: "white",
+          backgroundColor: read.isActive() ? "green" : "red"
+        }}
+      >
+        {read.isActive() ? "Folder is listening now" : "Click to open folder"}
+      </button>
       <Hr />
       <div>
         <h3>
